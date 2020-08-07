@@ -1,10 +1,11 @@
 ﻿using Blog.Core.IRepository.Base;
 using Blog.Core.IServices.BASE;
 using Blog.Core.Model;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Blog.Core.Services.BASE
@@ -52,6 +53,16 @@ namespace Blog.Core.Services.BASE
         }
 
         /// <summary>
+        /// 批量插入实体(速度快)
+        /// </summary>
+        /// <param name="listEntity">实体集合</param>
+        /// <returns>影响行数</returns>
+        public async Task<int> Add(List<TEntity> listEntity)
+        {
+            return await BaseDal.Add(listEntity);
+        }
+
+        /// <summary>
         /// 更新实体数据
         /// </summary>
         /// <param name="entity">博文实体类</param>
@@ -63,6 +74,10 @@ namespace Blog.Core.Services.BASE
         public async Task<bool> Update(TEntity entity, string strWhere)
         {
             return await BaseDal.Update(entity, strWhere);
+        }
+        public async Task<bool> Update(object operateAnonymousObjects)
+        {
+            return await BaseDal.Update(operateAnonymousObjects);
         }
 
         public async Task<bool> Update(
@@ -168,6 +183,29 @@ namespace Blog.Core.Services.BASE
             return await BaseDal.Query(strWhere, strOrderByFileds);
         }
 
+        /// <summary>
+        /// 根据sql语句查询
+        /// </summary>
+        /// <param name="strSql">完整的sql语句</param>
+        /// <param name="parameters">参数</param>
+        /// <returns>泛型集合</returns>
+        public async Task<List<TEntity>> QuerySql(string strSql, SugarParameter[] parameters = null)
+        {
+            return await BaseDal.QuerySql(strSql, parameters);
+
+        }
+
+        /// <summary>
+        /// 根据sql语句查询
+        /// </summary>
+        /// <param name="strSql">完整的sql语句</param>
+        /// <param name="parameters">参数</param>
+        /// <returns>DataTable</returns>
+        public async Task<DataTable> QueryTable(string strSql, SugarParameter[] parameters = null)
+        {
+            return await BaseDal.QueryTable(strSql, parameters);
+
+        }
         /// <summary>
         /// 功能描述:查询前N条数据
         /// 作　　者:AZLinli.Blog.Core

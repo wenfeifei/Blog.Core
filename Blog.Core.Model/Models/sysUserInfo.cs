@@ -1,9 +1,6 @@
 ﻿using SqlSugar;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Blog.Core.Model.Models
 {
@@ -35,17 +32,17 @@ namespace Blog.Core.Model.Models
         /// <summary>
         /// 登录账号
         /// </summary>
-        [SugarColumn(Length = 60, IsNullable = true)]
+        [SugarColumn(ColumnDataType ="nvarchar",Length = 200, IsNullable = true)]
         public string uLoginName { get; set; }
         /// <summary>
         /// 登录密码
         /// </summary>
-        [SugarColumn(Length = 60, IsNullable = true)]
+        [SugarColumn(ColumnDataType ="nvarchar",Length = 200, IsNullable = true)]
         public string uLoginPWD { get; set; }
         /// <summary>
         /// 真实姓名
         /// </summary>
-        [SugarColumn(Length = 60, IsNullable = true)]
+        [SugarColumn(ColumnDataType ="nvarchar",Length = 200, IsNullable = true)]
         public string uRealName { get; set; }
         /// <summary>
         /// 状态
@@ -54,7 +51,7 @@ namespace Blog.Core.Model.Models
         /// <summary>
         /// 备注
         /// </summary>
-        [SugarColumn(Length = int.MaxValue, IsNullable = true)]
+        [SugarColumn(ColumnDataType ="nvarchar",Length = 2000, IsNullable = true)]
         public string uRemark { get; set; }
         /// <summary>
         /// 创建时间
@@ -80,7 +77,7 @@ namespace Blog.Core.Model.Models
         /// <summary>
         /// 登录账号
         /// </summary>
-        [SugarColumn(Length = 60, IsNullable = true)]
+        [SugarColumn(ColumnDataType ="nvarchar",Length = 200, IsNullable = true)]
         public string name { get; set; }
 
         // 性别
@@ -93,7 +90,7 @@ namespace Blog.Core.Model.Models
         [SugarColumn(IsNullable = true)]
         public DateTime birth { get; set; } = DateTime.Now;
         // 地址
-        [SugarColumn(Length = 200, IsNullable = true)]
+        [SugarColumn(ColumnDataType ="nvarchar",Length = 200, IsNullable = true)]
         public string addr { get; set; }
 
         [SugarColumn(IsNullable = true)]
@@ -101,9 +98,9 @@ namespace Blog.Core.Model.Models
 
 
         [SugarColumn(IsIgnore = true)]
-        public int RID { get; set; }
+        public List<int> RIDs { get; set; }
         [SugarColumn(IsIgnore = true)]
-        public string RoleName { get; set; }
+        public List<string> RoleNames { get; set; }
 
     }
 }

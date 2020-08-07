@@ -1,8 +1,9 @@
 ﻿using Blog.Core.Model;
+using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Blog.Core.IServices.BASE
@@ -16,6 +17,8 @@ namespace Blog.Core.IServices.BASE
 
         Task<int> Add(TEntity model);
 
+        Task<int> Add(List<TEntity> listEntity);
+
         Task<bool> DeleteById(object id);
 
         Task<bool> Delete(TEntity model);
@@ -25,6 +28,8 @@ namespace Blog.Core.IServices.BASE
         Task<bool> Update(TEntity model);
         Task<bool> Update(TEntity entity, string strWhere);
 
+        Task<bool> Update(object operateAnonymousObjects);
+
         Task<bool> Update(TEntity entity, List<string> lstColumns = null, List<string> lstIgnoreColumns = null, string strWhere = "");
 
         Task<List<TEntity>> Query();
@@ -33,6 +38,8 @@ namespace Blog.Core.IServices.BASE
         Task<List<TEntity>> Query(Expression<Func<TEntity, bool>> whereExpression, string strOrderByFileds);
         Task<List<TEntity>> Query(Expression<Func<TEntity, bool>> whereExpression, Expression<Func<TEntity, object>> orderByExpression, bool isAsc = true);
         Task<List<TEntity>> Query(string strWhere, string strOrderByFileds);
+        Task<List<TEntity>> QuerySql(string strSql, SugarParameter[] parameters = null);
+        Task<DataTable> QueryTable(string strSql, SugarParameter[] parameters = null);
 
         Task<List<TEntity>> Query(Expression<Func<TEntity, bool>> whereExpression, int intTop, string strOrderByFileds);
         Task<List<TEntity>> Query(string strWhere, int intTop, string strOrderByFileds);

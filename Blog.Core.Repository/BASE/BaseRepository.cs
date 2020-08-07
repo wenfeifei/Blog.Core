@@ -1,43 +1,56 @@
-﻿using Blog.Core.Common.DB;
+﻿using Blog.Core.Common;
+using Blog.Core.Common.DB;
 using Blog.Core.IRepository.Base;
+using Blog.Core.IRepository.UnitOfWork;
 using Blog.Core.Model;
-using Blog.Core.Model.Models;
 using SqlSugar;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Blog.Core.Repository.Base
 {
     public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : class, new()
     {
-        private DbContext _context;
-        private SqlSugarClient _db;
-        private SimpleClient<TEntity> _entityDb;
+        private readonly IUnitOfWork _unitOfWork;
+        private SqlSugarClient _dbBase;
 
-        public DbContext Context
+        private ISqlSugarClient _db
         {
-            get { return _context; }
-            set { _context = value; }
+            get
+            {
+                /* 如果要开启多库支持，
+                 * 1、在appsettings.json 中开启MutiDBEnabled节点为true，必填
+                 * 2、设置一个主连接的数据库ID，节点MainDB，对应的连接字符串的Enabled也必须true，必填
+                 */
+                if (Appsettings.app(new string[] { "MutiDBEnabled" }).ObjToBool())
+                {
+                    if (typeof(TEntity).GetTypeInfo().GetCustomAttributes(typeof(SugarTable), true).FirstOrDefault((x => x.GetType() == typeof(SugarTable))) is SugarTable sugarTable && !string.IsNullOrEmpty(sugarTable.TableDescription))
+                    {
+                        _dbBase.ChangeDatabase(sugarTable.TableDescription.ToLower());
+                    }
+                    else
+                    {
+                        _dbBase.ChangeDatabase(MainDb.CurrentDbConnId.ToLower());
+                    }
+                }
+
+                return _dbBase;
+            }
         }
-        internal SqlSugarClient Db
+
+        internal ISqlSugarClient Db
         {
             get { return _db; }
-            private set { _db = value; }
         }
-        internal SimpleClient<TEntity> EntityDb
+
+        public BaseRepository(IUnitOfWork unitOfWork)
         {
-            get { return _entityDb; }
-            private set { _entityDb = value; }
-        }
-        public BaseRepository()
-        {
-            DbContext.Init(BaseDBConfig.ConnectionString, (DbType)BaseDBConfig.DbType);
-            _context = DbContext.GetDbContext();
-            _db = _context.Db;
-            _entityDb = _context.GetEntityDB<TEntity>(_db);
+            _unitOfWork = unitOfWork;
+            _dbBase = unitOfWork.GetDbClient();
         }
 
 
@@ -143,6 +156,11 @@ namespace Blog.Core.Repository.Base
             return await _db.Ado.ExecuteCommandAsync(strSql, parameters) > 0;
         }
 
+        public async Task<bool> Update(object operateAnonymousObjects)
+        {
+            return await _db.Updateable<TEntity>(operateAnonymousObjects).ExecuteCommandAsync() > 0;
+        }
+
         public async Task<bool> Update(
           TEntity entity,
           List<string> lstColumns = null,
@@ -226,7 +244,6 @@ namespace Blog.Core.Repository.Base
         /// <returns>数据列表</returns>
         public async Task<List<TEntity>> Query()
         {
-            //return await Task.Run(() => _entityDb.GetList());
             return await _db.Queryable<TEntity>().ToListAsync();
         }
 
@@ -250,7 +267,6 @@ namespace Blog.Core.Repository.Base
         /// <returns>数据列表</returns>
         public async Task<List<TEntity>> Query(Expression<Func<TEntity, bool>> whereExpression)
         {
-            //return await Task.Run(() => _entityDb.GetList(whereExpression));
             return await _db.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).ToListAsync();
         }
 
@@ -327,7 +343,27 @@ namespace Blog.Core.Repository.Base
             return await _db.Queryable<TEntity>().OrderByIF(!string.IsNullOrEmpty(strOrderByFileds), strOrderByFileds).WhereIF(!string.IsNullOrEmpty(strWhere), strWhere).Take(intTop).ToListAsync();
         }
 
+        /// <summary>
+        /// 根据sql语句查询
+        /// </summary>
+        /// <param name="strSql">完整的sql语句</param>
+        /// <param name="parameters">参数</param>
+        /// <returns>泛型集合</returns>
+        public async Task<List<TEntity>> QuerySql(string strSql, SugarParameter[] parameters = null)
+        {
+            return await _db.Ado.SqlQueryAsync<TEntity>(strSql, parameters);
+        }
 
+        /// <summary>
+        /// 根据sql语句查询
+        /// </summary>
+        /// <param name="strSql">完整的sql语句</param>
+        /// <param name="parameters">参数</param>
+        /// <returns>DataTable</returns>
+        public async Task<DataTable> QueryTable(string strSql, SugarParameter[] parameters = null)
+        {
+            return await _db.Ado.GetDataTableAsync(strSql, parameters);
+        }
 
         /// <summary>
         /// 功能描述:分页查询

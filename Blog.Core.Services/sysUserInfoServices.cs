@@ -1,9 +1,9 @@
+using Blog.Core.IRepository.Base;
+using Blog.Core.IServices;
 using Blog.Core.Model.Models;
 using Blog.Core.Services.BASE;
-using Blog.Core.IServices;
-using Blog.Core.IRepository;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Blog.Core.FrameWork.Services
 {
@@ -13,10 +13,10 @@ namespace Blog.Core.FrameWork.Services
     public class SysUserInfoServices : BaseServices<sysUserInfo>, ISysUserInfoServices
     {
 
-        IsysUserInfoRepository _dal;
+        IBaseRepository<sysUserInfo> _dal;
         IUserRoleServices _userRoleServices;
-        IRoleRepository _roleRepository;
-        public SysUserInfoServices(IsysUserInfoRepository dal, IUserRoleServices userRoleServices, IRoleRepository roleRepository)
+        IBaseRepository<Role> _roleRepository;
+        public SysUserInfoServices(IBaseRepository<sysUserInfo> dal, IUserRoleServices userRoleServices, IBaseRepository<Role> roleRepository)
         {
             this._dal = dal;
             this._userRoleServices = userRoleServices;
@@ -58,12 +58,14 @@ namespace Blog.Core.FrameWork.Services
         {
             string roleName = "";
             var user = (await base.Query(a => a.uLoginName == loginName && a.uLoginPWD == loginPwd)).FirstOrDefault();
+            var roleList = await _roleRepository.Query(a => a.IsDeleted==false);
             if (user != null)
             {
                 var userRoles = await _userRoleServices.Query(ur => ur.UserId == user.uID);
                 if (userRoles.Count > 0)
                 {
-                    var roles = await _roleRepository.QueryByIDs(userRoles.Select(ur => ur.RoleId.ObjToString()).ToArray());
+                    var arr = userRoles.Select(ur => ur.RoleId.ObjToString()).ToList();
+                    var roles = roleList.Where(d => arr.Contains(d.Id.ObjToString()));
 
                     roleName = string.Join(',', roles.Select(r => r.Name).ToArray());
                 }

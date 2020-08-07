@@ -1,18 +1,39 @@
-﻿using Blog.Core.Common;
-using Blog.Core.Common.DB;
+﻿using Blog.Core.Common.DB;
 using SqlSugar;
 using System;
-using System.IO;
 
-namespace Blog.Core.Model.Models
+namespace Blog.Core.Model.Seed
 {
     public class MyContext
     {
 
-        private static string _connectionString = BaseDBConfig.ConnectionString;
-        private static DbType _dbType = (DbType)BaseDBConfig.DbType;
+        private static MutiDBOperate connectObject => GetMainConnectionDb();
+        private static string _connectionString = connectObject.Connection;
+        private static DbType _dbType = (DbType)connectObject.DbType;
+        public static string ConnId = connectObject.ConnId;
         private SqlSugarClient _db;
 
+        /// <summary>
+        /// 连接字符串 
+        /// Blog.Core
+        /// </summary>
+        public static MutiDBOperate GetMainConnectionDb()
+        {
+            var mainConnetctDb = BaseDBConfig.MutiConnectionString.Item1.Find(x => x.ConnId == MainDb.CurrentDbConnId);
+            if (BaseDBConfig.MutiConnectionString.Item1.Count > 0)
+            {
+                if (mainConnetctDb == null)
+                {
+                    mainConnetctDb = BaseDBConfig.MutiConnectionString.Item1[0];
+                }
+            }
+            else
+            {
+                throw new Exception("请确保appsettigns.json中配置连接字符串,并设置Enabled为true;");
+            }
+
+            return mainConnetctDb;
+        }
         /// <summary>
         /// 连接字符串 
         /// Blog.Core
@@ -68,7 +89,6 @@ namespace Blog.Core.Model.Models
                 ConnectionString = _connectionString,
                 DbType = _dbType,
                 IsAutoCloseConnection = true,
-                IsShardSameThread = false,
                 InitKeyType = InitKeyType.Attribute,//mark
                 ConfigureExternalServices = new ConfigureExternalServices()
                 {
@@ -81,7 +101,6 @@ namespace Blog.Core.Model.Models
                 }
             });
         }
-
 
 
         #region 实例方法
@@ -105,140 +124,10 @@ namespace Blog.Core.Model.Models
             return new SimpleClient<T>(db);
         }
 
-        #region 根据数据库表生产实体类
-        /// <summary>
-        /// 功能描述:根据数据库表生产实体类
-        /// 作　　者:Blog.Core
-        /// </summary>       
-        /// <param name="strPath">实体类存放路径</param>
-        public void CreateClassFileByDBTalbe(string strPath)
-        {
-            CreateClassFileByDBTalbe(strPath, "Blog.Core.Entity");
-        }
-        /// <summary>
-        /// 功能描述:根据数据库表生产实体类
-        /// 作　　者:Blog.Core
-        /// </summary>
-        /// <param name="strPath">实体类存放路径</param>
-        /// <param name="strNameSpace">命名空间</param>
-        public void CreateClassFileByDBTalbe(string strPath, string strNameSpace)
-        {
-            CreateClassFileByDBTalbe(strPath, strNameSpace, null);
-        }
 
-        /// <summary>
-        /// 功能描述:根据数据库表生产实体类
-        /// 作　　者:Blog.Core
-        /// </summary>
-        /// <param name="strPath">实体类存放路径</param>
-        /// <param name="strNameSpace">命名空间</param>
-        /// <param name="lstTableNames">生产指定的表</param>
-        public void CreateClassFileByDBTalbe(
-            string strPath,
-            string strNameSpace,
-            string[] lstTableNames)
-        {
-            CreateClassFileByDBTalbe(strPath, strNameSpace, lstTableNames, string.Empty);
-        }
 
-        /// <summary>
-        /// 功能描述:根据数据库表生产实体类
-        /// 作　　者:Blog.Core
-        /// </summary>
-        /// <param name="strPath">实体类存放路径</param>
-        /// <param name="strNameSpace">命名空间</param>
-        /// <param name="lstTableNames">生产指定的表</param>
-        /// <param name="strInterface">实现接口</param>
-        /// <param name="blnSerializable">是否序列化</param>
-        public void CreateClassFileByDBTalbe(
-          string strPath,
-          string strNameSpace,
-          string[] lstTableNames,
-          string strInterface,
-          bool blnSerializable = false)
-        {
-            if (lstTableNames != null && lstTableNames.Length > 0)
-            {
-                _db.DbFirst.Where(lstTableNames).IsCreateDefaultValue().IsCreateAttribute()
-                    .SettingClassTemplate(p => p = @"
-{using}
-
-namespace {Namespace}
-{
-    {ClassDescription}{SugarTable}" + (blnSerializable ? "[Serializable]" : "") + @"
-    public partial class {ClassName}" + (string.IsNullOrEmpty(strInterface) ? "" : (" : " + strInterface)) + @"
-    {
-        public {ClassName}()
-        {
-{Constructor}
-        }
-{PropertyName}
-    }
-}
-")
-                    .SettingPropertyTemplate(p => p = @"
-            {SugarColumn}
-            public {PropertyType} {PropertyName}
-            {
-                get
-                {
-                    return _{PropertyName};
-                }
-                set
-                {
-                    if(_{PropertyName}!=value)
-                    {
-                        base.SetValueCall(" + "\"{PropertyName}\",_{PropertyName}" + @");
-                    }
-                    _{PropertyName}=value;
-                }
-            }")
-                    .SettingPropertyDescriptionTemplate(p => p = "          private {PropertyType} _{PropertyName};\r\n" + p)
-                    .SettingConstructorTemplate(p => p = "              this._{PropertyName} ={DefaultValue};")
-                    .CreateClassFile(strPath, strNameSpace);
-            }
-            else
-            {
-                _db.DbFirst.IsCreateAttribute().IsCreateDefaultValue()
-                    .SettingClassTemplate(p => p = @"
-{using}
-
-namespace {Namespace}
-{
-    {ClassDescription}{SugarTable}" + (blnSerializable ? "[Serializable]" : "") + @"
-    public partial class {ClassName}" + (string.IsNullOrEmpty(strInterface) ? "" : (" : " + strInterface)) + @"
-    {
-        public {ClassName}()
-        {
-{Constructor}
-        }
-{PropertyName}
-    }
-}
-")
-                    .SettingPropertyTemplate(p => p = @"
-            {SugarColumn}
-            public {PropertyType} {PropertyName}
-            {
-                get
-                {
-                    return _{PropertyName};
-                }
-                set
-                {
-                    if(_{PropertyName}!=value)
-                    {
-                        base.SetValueCall(" + "\"{PropertyName}\",_{PropertyName}" + @");
-                    }
-                    _{PropertyName}=value;
-                }
-            }")
-                    .SettingPropertyDescriptionTemplate(p => p = "          private {PropertyType} _{PropertyName};\r\n" + p)
-                    .SettingConstructorTemplate(p => p = "              this._{PropertyName} ={DefaultValue};")
-                    .CreateClassFile(strPath, strNameSpace);
-            }
-        }
         #endregion
+
 
         #region 根据实体类生成数据库表
         /// <summary>
@@ -281,7 +170,6 @@ namespace {Namespace}
         }
         #endregion
 
-        #endregion
 
         #region 静态方法
 

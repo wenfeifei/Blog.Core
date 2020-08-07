@@ -1,21 +1,25 @@
 ﻿using Blog.Core.Model.Models;
 using Xunit;
 using System;
-using Blog.Core.Repository.Base;
-using Blog.Core.Repository;
 using System.Linq;
-using Blog.Core.Common.DB;
-using SqlSugar;
+using Autofac;
+using Blog.Core.IRepository.Base;
 
 namespace Blog.Core.Tests
 {
     public class Repository_Base_Should
     {
-        BaseRepository<BlogArticle> baseRepository = new BaseRepository<BlogArticle>();
+        private IBaseRepository<BlogArticle> baseRepository;
+        DI_Test dI_Test = new DI_Test();
 
         public Repository_Base_Should()
         {
-            DbContext.Init(BaseDBConfig.ConnectionString,(DbType)BaseDBConfig.DbType);
+
+            var container = dI_Test.DICollections();
+
+            baseRepository = container.Resolve<IBaseRepository<BlogArticle>>();
+
+            //DbContext.Init(BaseDBConfig.ConnectionString,(DbType)BaseDBConfig.DbType);
         }
 
 

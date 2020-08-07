@@ -1,9 +1,5 @@
 ﻿using SqlSugar;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Blog.Core.Model.Models
 {
@@ -34,7 +30,7 @@ namespace Blog.Core.Model.Models
         /// <summary>
         /// 创建者
         /// </summary>
-        [SugarColumn(Length = 50, IsNullable = true)]
+        [SugarColumn(ColumnDataType = "nvarchar", Length = 50, IsNullable = true)]
         public string CreateBy { get; set; }
         /// <summary>
         /// 创建时间
@@ -49,7 +45,7 @@ namespace Blog.Core.Model.Models
         /// <summary>
         /// 修改者
         /// </summary>
-        [SugarColumn(Length = 50, IsNullable = true)]
+        [SugarColumn(ColumnDataType = "nvarchar", Length = 50, IsNullable = true)]
         public string ModifyBy { get; set; }
         /// <summary>
         ///修改时间
